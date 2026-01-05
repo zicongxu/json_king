@@ -1,0 +1,13 @@
+{
+  "manifest_version": 3,
+  "name": "JSON KING",
+  "version": "0.1.0",
+  "description": "JSON 递归解析与编辑工具",
+  "action": {
+    "default_title": "JSON KING"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "permissions": ["tabs"]
+}
