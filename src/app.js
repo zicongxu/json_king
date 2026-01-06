@@ -155,7 +155,7 @@ function boot() {
   function setInputVisible(visible) {
     inputVisible = visible;
     layoutEl.classList.toggle("input-hidden", !visible);
-    if (btnToggleInputEl) btnToggleInputEl.textContent = visible ? "📥 隐藏输入" : "📤 显示输入";
+    if (btnToggleInputEl) btnToggleInputEl.textContent = visible ? "🔳 全屏" : "🔲 退出";
   }
 
   if (btnToggleInputEl) {
