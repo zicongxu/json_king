@@ -26,6 +26,8 @@ export function createMainPanel({
   btnMainCancelEl,
   btnMainCopyEl,
   btnMainCopyCompactEl,
+  btnMainExpandAllEl,
+  btnMainCollapseAllEl,
   diffOverlay,
   toast,
   contextMenu,
@@ -112,6 +114,22 @@ export function createMainPanel({
     return JSON.stringify(path);
   }
 
+  function collectCollapsiblePaths(value, path, outSet) {
+    if (value == null || typeof value !== "object") return;
+    if (path.length) outSet.add(getPathKey(path));
+    if (Array.isArray(value)) {
+      for (let i = 0; i < value.length; i += 1) {
+        collectCollapsiblePaths(value[i], [...path, i], outSet);
+      }
+      return;
+    }
+    const keys = Object.keys(value);
+    for (let i = 0; i < keys.length; i += 1) {
+      const k = keys[i];
+      collectCollapsiblePaths(value[k], [...path, k], outSet);
+    }
+  }
+
   function toggleCollapse(path) {
     const rootValue = getRootValue();
     const targetValue = getAtPath(rootValue, path);
@@ -133,6 +151,8 @@ export function createMainPanel({
     btnMainEditEl.style.display = editing ? "none" : "";
     if (btnMainCopyEl) btnMainCopyEl.style.display = editing ? "none" : "";
     if (btnMainCopyCompactEl) btnMainCopyCompactEl.style.display = editing ? "none" : "";
+    if (btnMainExpandAllEl) btnMainExpandAllEl.style.display = editing ? "none" : "";
+    if (btnMainCollapseAllEl) btnMainCollapseAllEl.style.display = editing ? "none" : "";
     btnMainSaveEl.style.display = editing ? "" : "none";
     if (btnMainDiffEl) btnMainDiffEl.style.display = editing ? "" : "none";
     btnMainCancelEl.style.display = editing ? "" : "none";
@@ -204,6 +224,43 @@ export function createMainPanel({
     const scrollRatio = getScrollRatio(mainViewerEl);
     enterEditModeWithScrollSync({ mode: "ratio", value: scrollRatio });
   });
+
+  if (btnMainExpandAllEl) {
+    btnMainExpandAllEl.addEventListener("click", () => {
+      if (mode === "edit") return;
+      const ensured = ensureRootValueReady();
+      if (!ensured.ok) {
+        toast.show("JSON 解析失败");
+        return;
+      }
+      const scrollRatio = getScrollRatio(mainViewerEl);
+      collapsedPaths.clear();
+      render();
+      window.requestAnimationFrame(() => {
+        const max = mainViewerEl.scrollHeight - mainViewerEl.clientHeight;
+        mainViewerEl.scrollTop = max > 0 ? max * scrollRatio : 0;
+      });
+    });
+  }
+
+  if (btnMainCollapseAllEl) {
+    btnMainCollapseAllEl.addEventListener("click", () => {
+      if (mode === "edit") return;
+      const ensured = ensureRootValueReady();
+      if (!ensured.ok) {
+        toast.show("JSON 解析失败");
+        return;
+      }
+      const scrollRatio = getScrollRatio(mainViewerEl);
+      collapsedPaths.clear();
+      collectCollapsiblePaths(ensured.value, [], collapsedPaths);
+      render();
+      window.requestAnimationFrame(() => {
+        const max = mainViewerEl.scrollHeight - mainViewerEl.clientHeight;
+        mainViewerEl.scrollTop = max > 0 ? max * scrollRatio : 0;
+      });
+    });
+  }
 
   if (btnMainCopyEl) {
     btnMainCopyEl.addEventListener("click", async () => {
