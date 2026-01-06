@@ -257,7 +257,7 @@ export function createLayerStack({
         copyCompactBtn.className = "btn";
         copyCompactBtn.type = "button";
         copyCompactBtn.dataset.action = "copyCompact";
-        copyCompactBtn.textContent = "📦 压缩复制";
+        copyCompactBtn.textContent = "📦 压缩";
         actionsEl.appendChild(copyCompactBtn);
 
         const value = layer.parsedValue;
@@ -522,7 +522,7 @@ export function createLayerStack({
         y: e.clientY,
         items: [
           { label: "📋 复制", onSelect: () => copyValue(value, { compact: false }) },
-          { label: "📦 压缩复制", onSelect: () => copyValue(value, { compact: true }) },
+          { label: "📦 压缩", onSelect: () => copyValue(value, { compact: true }) },
           { label: "✏️ 编辑", onSelect: () => openValueEditorFrom(idx, path) }
         ]
       });

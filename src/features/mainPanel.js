@@ -454,7 +454,7 @@ export function createMainPanel({
       y: e.clientY,
       items: [
         { label: "📋 复制", onSelect: () => copyValue(value, { compact: false }) },
-        { label: "📦 压缩复制", onSelect: () => copyValue(value, { compact: true }) },
+        { label: "📦 压缩", onSelect: () => copyValue(value, { compact: true }) },
         { label: "✏️ 编辑", onSelect: () => layerStack.editFromRoot(path) }
       ]
     });
