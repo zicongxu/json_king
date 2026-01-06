@@ -26,8 +26,7 @@ export function createMainPanel({
   btnMainCancelEl,
   btnMainCopyEl,
   btnMainCopyCompactEl,
-  btnMainExpandAllEl,
-  btnMainCollapseAllEl,
+  btnMainToggleExpandEl,
   diffOverlay,
   toast,
   contextMenu,
@@ -130,6 +129,27 @@ export function createMainPanel({
     }
   }
 
+  function isCollapsibleRoot(value) {
+    if (value == null || typeof value !== "object") return false;
+    if (Array.isArray(value)) return value.length > 0;
+    return Object.keys(value).length > 0;
+  }
+
+  function syncExpandToggleButton() {
+    if (!btnMainToggleExpandEl) return;
+    if (mode === "edit") {
+      btnMainToggleExpandEl.style.display = "none";
+      return;
+    }
+    const rootValue = getRootValue();
+    if (!isCollapsibleRoot(rootValue)) {
+      btnMainToggleExpandEl.style.display = "none";
+      return;
+    }
+    btnMainToggleExpandEl.style.display = "";
+    btnMainToggleExpandEl.textContent = collapsedPaths.size > 0 ? "展开" : "收起";
+  }
+
   function toggleCollapse(path) {
     const rootValue = getRootValue();
     const targetValue = getAtPath(rootValue, path);
@@ -151,8 +171,7 @@ export function createMainPanel({
     btnMainEditEl.style.display = editing ? "none" : "";
     if (btnMainCopyEl) btnMainCopyEl.style.display = editing ? "none" : "";
     if (btnMainCopyCompactEl) btnMainCopyCompactEl.style.display = editing ? "none" : "";
-    if (btnMainExpandAllEl) btnMainExpandAllEl.style.display = editing ? "none" : "";
-    if (btnMainCollapseAllEl) btnMainCollapseAllEl.style.display = editing ? "none" : "";
+    if (btnMainToggleExpandEl) btnMainToggleExpandEl.style.display = editing ? "none" : "";
     btnMainSaveEl.style.display = editing ? "" : "none";
     if (btnMainDiffEl) btnMainDiffEl.style.display = editing ? "" : "none";
     btnMainCancelEl.style.display = editing ? "" : "none";
@@ -162,6 +181,7 @@ export function createMainPanel({
         : "";
     }
     if (!editing && diffOverlay) diffOverlay.close();
+    if (!editing) syncExpandToggleButton();
   }
 
   function render() {
@@ -189,6 +209,7 @@ export function createMainPanel({
       return;
     }
     mainViewerEl.innerHTML = renderJson(rootValue, [], 0, { collapsedPaths });
+    syncExpandToggleButton();
   }
 
   function enterEditModeWithScrollSync(scrollSync) {
@@ -225,35 +246,23 @@ export function createMainPanel({
     enterEditModeWithScrollSync({ mode: "ratio", value: scrollRatio });
   });
 
-  if (btnMainExpandAllEl) {
-    btnMainExpandAllEl.addEventListener("click", () => {
+  if (btnMainToggleExpandEl) {
+    btnMainToggleExpandEl.addEventListener("click", () => {
       if (mode === "edit") return;
       const ensured = ensureRootValueReady();
       if (!ensured.ok) {
         toast.show("JSON 解析失败");
         return;
       }
-      const scrollRatio = getScrollRatio(mainViewerEl);
-      collapsedPaths.clear();
-      render();
-      window.requestAnimationFrame(() => {
-        const max = mainViewerEl.scrollHeight - mainViewerEl.clientHeight;
-        mainViewerEl.scrollTop = max > 0 ? max * scrollRatio : 0;
-      });
-    });
-  }
+      if (!isCollapsibleRoot(ensured.value)) return;
 
-  if (btnMainCollapseAllEl) {
-    btnMainCollapseAllEl.addEventListener("click", () => {
-      if (mode === "edit") return;
-      const ensured = ensureRootValueReady();
-      if (!ensured.ok) {
-        toast.show("JSON 解析失败");
-        return;
-      }
       const scrollRatio = getScrollRatio(mainViewerEl);
-      collapsedPaths.clear();
-      collectCollapsiblePaths(ensured.value, [], collapsedPaths);
+      if (collapsedPaths.size > 0) {
+        collapsedPaths.clear();
+      } else {
+        collapsedPaths.clear();
+        collectCollapsiblePaths(ensured.value, [], collapsedPaths);
+      }
       render();
       window.requestAnimationFrame(() => {
         const max = mainViewerEl.scrollHeight - mainViewerEl.clientHeight;

@@ -26,8 +26,7 @@ function boot() {
   const btnMainCancelEl = document.getElementById("btnMainCancel");
   const btnMainCopyEl = document.getElementById("btnMainCopy");
   const btnMainCopyCompactEl = document.getElementById("btnMainCopyCompact");
-  const btnMainExpandAllEl = document.getElementById("btnMainExpandAll");
-  const btnMainCollapseAllEl = document.getElementById("btnMainCollapseAll");
+  const btnMainToggleExpandEl = document.getElementById("btnMainToggleExpand");
 
   const diffOverlayEl = document.getElementById("diffOverlay");
   const diffTitleEl = document.getElementById("diffTitle");
@@ -89,8 +88,7 @@ function boot() {
     btnMainCancelEl,
     btnMainCopyEl,
     btnMainCopyCompactEl,
-    btnMainExpandAllEl,
-    btnMainCollapseAllEl,
+    btnMainToggleExpandEl,
     diffOverlay,
     toast,
     contextMenu,

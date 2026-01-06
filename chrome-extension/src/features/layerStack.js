@@ -260,19 +260,19 @@ export function createLayerStack({
         copyCompactBtn.textContent = "📦 压缩复制";
         actionsEl.appendChild(copyCompactBtn);
 
-        const expandAllBtn = document.createElement("button");
-        expandAllBtn.className = "btn";
-        expandAllBtn.type = "button";
-        expandAllBtn.dataset.action = "expandAll";
-        expandAllBtn.textContent = "🔼 展开全部";
-        actionsEl.appendChild(expandAllBtn);
-
-        const collapseAllBtn = document.createElement("button");
-        collapseAllBtn.className = "btn";
-        collapseAllBtn.type = "button";
-        collapseAllBtn.dataset.action = "collapseAll";
-        collapseAllBtn.textContent = "🔽 收起全部";
-        actionsEl.appendChild(collapseAllBtn);
+        const value = layer.parsedValue;
+        const canToggleExpand =
+          value != null &&
+          typeof value === "object" &&
+          (Array.isArray(value) ? value.length > 0 : Object.keys(value).length > 0);
+        if (canToggleExpand) {
+          const toggleExpandBtn = document.createElement("button");
+          toggleExpandBtn.className = "btn";
+          toggleExpandBtn.type = "button";
+          toggleExpandBtn.dataset.action = "toggleExpand";
+          toggleExpandBtn.textContent = layer.collapsedPaths.size > 0 ? "展开" : "收起";
+          actionsEl.appendChild(toggleExpandBtn);
+        }
 
         const editBtn = document.createElement("button");
         editBtn.className = "btn";
@@ -385,25 +385,22 @@ export function createLayerStack({
           return;
         }
 
-        if (action === "expandAll") {
-          const bodyEl = modalEl.querySelector("[data-modal-body]");
-          const scrollRatio = bodyEl ? getScrollRatio(bodyEl) : 0;
-          current.collapsedPaths.clear();
-          renderModal(modalEl, idx);
-          window.requestAnimationFrame(() => {
-            const nextBodyEl = modalEl.querySelector("[data-modal-body]");
-            if (!nextBodyEl) return;
-            const max = nextBodyEl.scrollHeight - nextBodyEl.clientHeight;
-            nextBodyEl.scrollTop = max > 0 ? max * scrollRatio : 0;
-          });
-          return;
-        }
+        if (action === "toggleExpand") {
+          const value = current.parsedValue;
+          const canToggleExpand =
+            value != null &&
+            typeof value === "object" &&
+            (Array.isArray(value) ? value.length > 0 : Object.keys(value).length > 0);
+          if (!canToggleExpand) return;
 
-        if (action === "collapseAll") {
           const bodyEl = modalEl.querySelector("[data-modal-body]");
           const scrollRatio = bodyEl ? getScrollRatio(bodyEl) : 0;
-          current.collapsedPaths.clear();
-          collectCollapsiblePaths(current.parsedValue, [], current.collapsedPaths);
+          if (current.collapsedPaths.size > 0) {
+            current.collapsedPaths.clear();
+          } else {
+            current.collapsedPaths.clear();
+            collectCollapsiblePaths(current.parsedValue, [], current.collapsedPaths);
+          }
           renderModal(modalEl, idx);
           window.requestAnimationFrame(() => {
             const nextBodyEl = modalEl.querySelector("[data-modal-body]");
