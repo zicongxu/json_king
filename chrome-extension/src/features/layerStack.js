@@ -270,7 +270,7 @@ export function createLayerStack({
           toggleExpandBtn.className = "btn";
           toggleExpandBtn.type = "button";
           toggleExpandBtn.dataset.action = "toggleExpand";
-          toggleExpandBtn.textContent = layer.collapsedPaths.size > 0 ? "展开" : "收起";
+          toggleExpandBtn.textContent = layer.collapsedPaths.size > 0 ? "🔼 展开" : "🔽 收起";
           actionsEl.appendChild(toggleExpandBtn);
         }
 

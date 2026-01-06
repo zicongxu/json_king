@@ -147,7 +147,7 @@ export function createMainPanel({
       return;
     }
     btnMainToggleExpandEl.style.display = "";
-    btnMainToggleExpandEl.textContent = collapsedPaths.size > 0 ? "展开" : "收起";
+    btnMainToggleExpandEl.textContent = collapsedPaths.size > 0 ? "🔼 展开" : "🔽 收起";
   }
 
   function toggleCollapse(path) {
