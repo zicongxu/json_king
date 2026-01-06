@@ -94,7 +94,22 @@ export function createLayerStack({
     return scrollEl.scrollTop / max;
   }
 
-  function enterLayerEditMode(modalEl, layerIndex, scrollRatio) {
+  function clampNumber(value, min, max) {
+    return Math.max(min, Math.min(max, value));
+  }
+
+  function getScrollAnchorFromEvent(scrollEl, e) {
+    const rect = scrollEl.getBoundingClientRect();
+    const offsetY = clampNumber(e.clientY - rect.top, 0, rect.height);
+    const total = scrollEl.scrollHeight || 1;
+    const ratio = (scrollEl.scrollTop + offsetY) / total;
+    return {
+      ratio: clampNumber(ratio, 0, 1),
+      offsetY
+    };
+  }
+
+  function enterLayerEditMode(modalEl, layerIndex, scrollSync) {
     const current = layers[layerIndex];
     if (!current) return;
     current.mode = "edit";
@@ -107,8 +122,17 @@ export function createLayerStack({
       const editor = nextBodyEl.querySelector("textarea");
       const highlight = nextBodyEl.querySelector(".editor-highlight");
       if (!editor || !highlight) return;
-      const max = highlight.scrollHeight - highlight.clientHeight;
-      const nextTop = max > 0 ? max * scrollRatio : 0;
+
+      let nextTop = 0;
+      if (scrollSync && scrollSync.mode === "anchor") {
+        const maxTop = highlight.scrollHeight - highlight.clientHeight;
+        const desiredTop = highlight.scrollHeight * scrollSync.ratio - scrollSync.offsetY;
+        nextTop = clampNumber(desiredTop, 0, Math.max(0, maxTop));
+      } else {
+        const maxTop = highlight.scrollHeight - highlight.clientHeight;
+        const ratio = scrollSync && scrollSync.mode === "ratio" ? scrollSync.value : 0;
+        nextTop = maxTop > 0 ? maxTop * ratio : 0;
+      }
       editor.scrollTop = nextTop;
       highlight.scrollTop = nextTop;
     }, 0);
@@ -363,7 +387,7 @@ export function createLayerStack({
         if (action === "edit") {
           const bodyEl = modalEl.querySelector("[data-modal-body]");
           const scrollRatio = bodyEl ? getScrollRatio(bodyEl) : 0;
-          enterLayerEditMode(modalEl, idx, scrollRatio);
+          enterLayerEditMode(modalEl, idx, { mode: "ratio", value: scrollRatio });
           return;
         }
 
@@ -492,8 +516,8 @@ export function createLayerStack({
 
       const bodyEl = e.target.closest("[data-modal-body]");
       if (bodyEl && !e.target.closest('.k, [data-role="value"], .expander, [data-action]')) {
-        const scrollRatio = getScrollRatio(bodyEl);
-        enterLayerEditMode(modalEl, idx, scrollRatio);
+        const anchor = getScrollAnchorFromEvent(bodyEl, e);
+        enterLayerEditMode(modalEl, idx, { mode: "anchor", ratio: anchor.ratio, offsetY: anchor.offsetY });
         return;
       }
 

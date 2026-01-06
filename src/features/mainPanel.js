@@ -56,6 +56,21 @@ export function createMainPanel({
     return scrollEl.scrollTop / max;
   }
 
+  function clampNumber(value, min, max) {
+    return Math.max(min, Math.min(max, value));
+  }
+
+  function getScrollAnchorFromEvent(scrollEl, e) {
+    const rect = scrollEl.getBoundingClientRect();
+    const offsetY = clampNumber(e.clientY - rect.top, 0, rect.height);
+    const total = scrollEl.scrollHeight || 1;
+    const ratio = (scrollEl.scrollTop + offsetY) / total;
+    return {
+      ratio: clampNumber(ratio, 0, 1),
+      offsetY
+    };
+  }
+
   function ensureRootValueReady() {
     const rootValue = getRootValue();
     if (rootValue != null) return { ok: true, value: rootValue };
@@ -156,7 +171,7 @@ export function createMainPanel({
     mainViewerEl.innerHTML = renderJson(rootValue, [], 0, { collapsedPaths });
   }
 
-  function enterEditModeWithScrollSync(scrollRatio) {
+  function enterEditModeWithScrollSync(scrollSync) {
     const ensured = ensureRootValueReady();
     if (!ensured.ok) {
       toast.show("JSON 解析失败");
@@ -169,8 +184,17 @@ export function createMainPanel({
       const editor = document.getElementById("mainEditor");
       const highlight = mainViewerEl.querySelector(".editor-highlight");
       if (!editor || !highlight) return;
-      const max = highlight.scrollHeight - highlight.clientHeight;
-      const nextTop = max > 0 ? max * scrollRatio : 0;
+
+      let nextTop = 0;
+      if (scrollSync && scrollSync.mode === "anchor") {
+        const maxTop = highlight.scrollHeight - highlight.clientHeight;
+        const desiredTop = highlight.scrollHeight * scrollSync.ratio - scrollSync.offsetY;
+        nextTop = clampNumber(desiredTop, 0, Math.max(0, maxTop));
+      } else {
+        const maxTop = highlight.scrollHeight - highlight.clientHeight;
+        const ratio = scrollSync && scrollSync.mode === "ratio" ? scrollSync.value : 0;
+        nextTop = maxTop > 0 ? maxTop * ratio : 0;
+      }
       editor.scrollTop = nextTop;
       highlight.scrollTop = nextTop;
     }, 0);
@@ -178,7 +202,7 @@ export function createMainPanel({
 
   btnMainEditEl.addEventListener("click", () => {
     const scrollRatio = getScrollRatio(mainViewerEl);
-    enterEditModeWithScrollSync(scrollRatio);
+    enterEditModeWithScrollSync({ mode: "ratio", value: scrollRatio });
   });
 
   if (btnMainCopyEl) {
@@ -277,8 +301,8 @@ export function createMainPanel({
   mainViewerEl.addEventListener("dblclick", (e) => {
     if (mode === "edit") return;
     if (e.target.closest('.k, [data-role="value"], .expander, [data-action]')) return;
-    const scrollRatio = getScrollRatio(mainViewerEl);
-    enterEditModeWithScrollSync(scrollRatio);
+    const anchor = getScrollAnchorFromEvent(mainViewerEl, e);
+    enterEditModeWithScrollSync({ mode: "anchor", ratio: anchor.ratio, offsetY: anchor.offsetY });
   });
 
   mainViewerEl.addEventListener("dblclick", (e) => {
